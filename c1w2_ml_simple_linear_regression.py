@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import urllib.request
+
 from sklearn import linear_model
 from sklearn.metrics import r2_score
-import urllib.request
 
 
 pd.set_option('display.width', 0)
