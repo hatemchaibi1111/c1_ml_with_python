@@ -80,3 +80,5 @@ img = mpimg.imread(filename)
 plt.figure(figsize=(100, 200))
 plt.imshow(img, interpolation='nearest')
 print()
+
+
