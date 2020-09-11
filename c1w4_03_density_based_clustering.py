@@ -149,7 +149,7 @@ plt.show(block=False)
 import sklearn.utils
 from sklearn.preprocessing import StandardScaler
 sklearn.utils.check_random_state(1000)
-Clus_dataSet = pdf[['xm','ym']]
+Clus_dataSet = pdf[['xm', 'ym']]
 Clus_dataSet = np.nan_to_num(Clus_dataSet)
 Clus_dataSet = StandardScaler().fit_transform(Clus_dataSet)
 
@@ -158,14 +158,14 @@ db = DBSCAN(eps=0.15, min_samples=10).fit(Clus_dataSet)
 core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
 core_samples_mask[db.core_sample_indices_] = True
 labels = db.labels_
-pdf["Clus_Db"]=labels
+pdf["Clus_Db"] = labels
 
 realClusterNum=len(set(labels)) - (1 if -1 in labels else 0)
 clusterNum = len(set(labels))
 
 # 8- Visualization of clusters based on location and Temperture
 fig = plt.figure(4)
-rcParams['figure.figsize'] = (14,10)
+rcParams['figure.figsize'] = (14, 10)
 
 my_map = Basemap(projection='merc',
                  resolution='l', area_thresh=1000.0,
