@@ -89,10 +89,20 @@ movies_df = pd.read_csv('moviedataset/ml-latest/movies.csv')
 ratings_df = pd.read_csv('moviedataset/ml-latest/ratings.csv')
 inputMovies = pd.DataFrame(userInput)
 
+#Using regular expressions to find a year stored between parentheses
+#We specify the parantheses so we don't conflict with movies that have years in their titles
+movies_df['year'] = movies_df.title.str.extract('(\(\d\d\d\d\))',expand=False)
+#Removing the parentheses
+movies_df['year'] = movies_df.year.str.extract('(\d\d\d\d)',expand=False)
+#Removing the years from the 'title' column
+movies_df['title'] = movies_df.title.str.replace('(\(\d\d\d\d\))', '')
+#Applying the strip function to get rid of any ending whitespace characters that may have appeared
+movies_df['title'] = movies_df['title'].apply(lambda x: x.strip())
+movies_df = movies_df.drop('genres', 1)
 
 inputId = movies_df[movies_df['title'].isin(inputMovies['title'].tolist())]
 inputMovies = pd.merge(inputId, inputMovies)
-inputMovies = inputMovies.drop('year', 1)
+# inputMovies = inputMovies.drop('year', 1)
 
 # Filtering out users that have watched movies that the input has watched and storing it
 userSubset = ratings_df[ratings_df['movieId'].isin(inputMovies['movieId'].tolist())]
@@ -100,7 +110,7 @@ userSubset = ratings_df[ratings_df['movieId'].isin(inputMovies['movieId'].tolist
 userSubsetGroup = userSubset.groupby(['userId'])
 # Sorting it so users with movie most in common with the input will have priority
 userSubsetGroup = sorted(userSubsetGroup,  key=lambda x: len(x[1]), reverse=True)
-
+userSubsetGroup = userSubsetGroup[0:100]
 # Store the Pearson Correlation in a dictionary, where the key is the user Id and the value is the coefficient
 pearsonCorrelationDict = {}
 
@@ -128,7 +138,22 @@ for name, group in userSubsetGroup:
         pearsonCorrelationDict[name] = Sxy / sqrt(Sxx * Syy)
     else:
         pearsonCorrelationDict[name] = 0
+pearsonDF = pd.DataFrame.from_dict(pearsonCorrelationDict, orient='index')
+pearsonDF.columns = ['similarityIndex']
+pearsonDF['userId'] = pearsonDF.index
+pearsonDF.index = range(len(pearsonDF))
+topUsers=pearsonDF.sort_values(by='similarityIndex', ascending=False)[0:50]
+topUsersRating=topUsers.merge(ratings_df, left_on='userId', right_on='userId', how='inner')
+topUsersRating['weightedRating'] = topUsersRating['similarityIndex']*topUsersRating['rating']
+tempTopUsersRating = topUsersRating.groupby('movieId').sum()[['similarityIndex','weightedRating']]
+tempTopUsersRating.columns = ['sum_similarityIndex','sum_weightedRating']
+recommendation_df = pd.DataFrame()
 
+# Now we take the weighted average
+recommendation_df['weighted average recommendation score'] = tempTopUsersRating['sum_weightedRating']/tempTopUsersRating['sum_similarityIndex']
+recommendation_df['movieId'] = tempTopUsersRating.index
 
-
+recommendation_df = recommendation_df.sort_values(by='weighted average recommendation score',
+                                                  ascending=False)
+print(movies_df.loc[movies_df['movieId'].isin(recommendation_df.head(10)['movieId'].tolist())])
 
